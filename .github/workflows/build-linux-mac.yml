@@ -1,12 +1,17 @@
 name: build-linux-mac
 
-# Baut die Desktop-App fuer Linux (AppImage + deb) und versucht einen
-# macOS-Zip-Build auf demselben Runner.
+# Baut die Desktop-App fuer Linux (AppImage + deb) und macOS (zip, x64 + arm64).
 #
-# Linux laeuft zuverlaessig. macOS ist ein Cross-Build von Linux aus und wird
-# von electron-builder offiziell nicht unterstuetzt (dmg braucht hdiutil) --
-# deshalb continue-on-error: der Zip-Weg wird versucht, ein Fehlschlag darf
-# aber die Linux-Artefakte nicht mitreissen.
+# Linux: deb/AppImage verlangen ein "homepage"-Feld in der package.json --
+#   Windows (NSIS) braucht es nicht, deshalb fehlte es und der Build brach ab
+#   mit "Please specify project homepage". Wird hier vor dem Build gesetzt.
+#
+# macOS: es gibt keinen macOS-Runner fuer dieses Konto. Der Cross-Build auf
+#   Linux funktioniert nur, wenn electron-builder die DARWIN-Electron-Binaries
+#   bekommt. Das Repo-Skript run-electron-builder.mjs setzt electronDist aber
+#   auf die lokale (Linux-)Distribution -> "corrupted Electron dist". Deshalb
+#   wird hier das passende darwin-Archiv geladen und electron-builder direkt
+#   mit -c.electronDist aufgerufen.
 
 on:
   workflow_dispatch:
@@ -20,17 +25,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - run: npm ci
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Set homepage (deb/AppImage require it)
+        run: |
+          node -e "
+            const fs=require('fs'), f='apps/desktop/package.json';
+            const p=JSON.parse(fs.readFileSync(f,'utf8'));
+            p.homepage='https://openamer-max.github.io/';
+            p.author=p.author||'Amer Sacirovic <https://openamer-max.github.io/>';
+            fs.writeFileSync(f, JSON.stringify(p,null,2));
+            console.log('homepage =', p.homepage);
+          "
 
       - name: Build Linux packages
         working-directory: apps/desktop
@@ -41,8 +52,7 @@ jobs:
       - name: Show result
         run: ls -la apps/desktop/release/ | grep -iE "appimage|deb" || true
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: linux
           path: |
@@ -52,38 +62,61 @@ jobs:
           retention-days: 7
 
   mac:
-    name: macOS zip (Cross-Build, Best Effort)
+    name: macOS zip (x64 + arm64)
     runs-on: ubuntu-latest
     continue-on-error: true
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - run: npm ci
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Set homepage
+        run: |
+          node -e "
+            const fs=require('fs'), f='apps/desktop/package.json';
+            const p=JSON.parse(fs.readFileSync(f,'utf8'));
+            p.homepage='https://openamer-max.github.io/';
+            fs.writeFileSync(f, JSON.stringify(p,null,2));
+          "
 
-      - name: Build macOS zip
+      - name: Download macOS Electron binaries
+        run: |
+          VER=$(node -p "require('electron/package.json').version")
+          echo "Electron $VER"
+          for arch in x64 arm64; do
+            curl -sSL -o "mac-$arch.zip" \
+              "https://github.com/electron/electron/releases/download/v$VER/electron-v$VER-darwin-$arch.zip"
+            mkdir -p "mac-dist-$arch"
+            unzip -q "mac-$arch.zip" -d "mac-dist-$arch"
+            echo "  $arch: $(du -sh mac-dist-$arch | cut -f1)"
+          done
+
+      - name: Build macOS zips
         working-directory: apps/desktop
-        run: npm run build && npm run builder -- --mac zip
+        run: |
+          npm run build
+          for arch in x64 arm64; do
+            echo "=== $arch ==="
+            npx electron-builder --mac zip --$arch \
+              -c.electronDist="$GITHUB_WORKSPACE/mac-dist-$arch" \
+              -c.directories.output="release-mac-$arch" \
+              -c.mac.identity=null
+          done
         env:
-          NODE_OPTIONS: --max-old-space-size=16384
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          NODE_OPTIONS: --max-old-space-size=16384
 
       - name: Show result
-        run: ls -la apps/desktop/release/ | grep -i zip || true
+        run: ls -la apps/desktop/release-mac-*/ 2>/dev/null | head -30 || true
 
-      - name: Upload artifacts
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: mac
-          path: apps/desktop/release/*.zip
+          path: apps/desktop/release-mac-*/*.zip
           if-no-files-found: warn
           retention-days: 7
