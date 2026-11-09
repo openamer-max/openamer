@@ -1,0 +1,61 @@
+name: build-macos
+
+# Baut den OpenAmer-Desktop fuer macOS auf einem echten macOS-Runner.
+# Auf Windows ist das nicht moeglich: electron-builder braucht fuer dmg/zip
+# macOS-Werkzeuge (hdiutil). Oeffentliche Repos bekommen macOS-Runner kostenlos.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-macos.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: macOS (arm64)
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhaengigkeiten
+        run: npm ci
+
+      - name: DMG bauen
+        working-directory: apps/desktop
+        run: npm run dist:mac:dmg
+        env:
+          NODE_OPTIONS: --max-old-space-size=16384
+          # Ohne Apple-Zertifikat nicht signieren -> unsignierter Build
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: ZIP bauen
+        working-directory: apps/desktop
+        run: npm run dist:mac:zip
+        env:
+          NODE_OPTIONS: --max-old-space-size=16384
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Ergebnis zeigen
+        run: ls -lh apps/desktop/release/ || true
+
+      - name: Artefakte hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: openamer-macos-arm64
+          path: |
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
+            apps/desktop/release/*.yml
+          if-no-files-found: warn
+          retention-days: 30
