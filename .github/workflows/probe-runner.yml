@@ -1,0 +1,26 @@
+name: probe-runner
+
+# Diagnose: laeuft auf diesem Konto ueberhaupt ein macOS-Runner?
+# Drei Jobs, ein Befehl. Zeigt, welches Label funktioniert.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - run: uname -a
+
+  macos_latest:
+    runs-on: macos-latest
+    steps:
+      - run: sw_vers
+
+  macos_14:
+    runs-on: macos-14
+    steps:
+      - run: sw_vers
