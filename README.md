@@ -112,7 +112,7 @@ curl -fsSL https://raw.githubusercontent.com/openamer/openamer/main/scripts/inst
 iex (irm https://raw.githubusercontent.com/openamer/openamer/main/scripts/install.ps1)
 ```
 
-**Prefer a download?** [OpenAmer-2026.9.12-win-x64.exe](https://github.com/openamer/openamer/releases/latest) — the signed Windows installer.
+**Prefer a download?** [OpenAmer-Setup-261119-win-x64.exe](https://github.com/openamer/openamer/releases/download/v261119/OpenAmer-Setup-261119-win-x64.exe) (8,7 MB) — the Windows installer. Older and newer builds: [all releases](https://github.com/openamer/openamer/releases/latest).
 
 Then:
 
