@@ -224,15 +224,15 @@ components retain their applicable licenses and attribution; see [NOTICE](NOTICE
 
 ---
 
-## OpenAmer unterstuetzen
+## OpenAmer unterstützen
 
 OpenAmer ist kostenlos und bleibt kostenlos - sechs Modelle, 185 Sprachen,
 kein Konto, keine Cloud, keine Werbung im Programm. Wer die Entwicklung
-unterstuetzen will:
+unterstützen will:
 
 <a href="https://www.paypal.com/qrcodes/p2pqrc/BVZD4HRJ9G6YG"><img src="https://openamer-max.github.io/assets/spenden-qr.png" alt="PayPal-Spenden-QR-Code" width="160"></a>
 
-**[Ueber PayPal unterstuetzen](https://www.paypal.com/qrcodes/p2pqrc/BVZD4HRJ9G6YG)** - jeder Betrag fliesst in Server,
+**[Über PayPal unterstützen](https://www.paypal.com/qrcodes/p2pqrc/BVZD4HRJ9G6YG)** - jeder Betrag fließt in Server,
 GPU-Zeit und Speicher. Kein Gehalt, keine Boni.
 
 Firmen-Sponsoring: openamer-max@proton.me (Logo und Link auf der Website und
