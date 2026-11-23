@@ -237,3 +237,11 @@ GPU-Zeit und Speicher. Kein Gehalt, keine Boni.
 
 Firmen-Sponsoring: openamer-max@proton.me (Logo und Link auf der Website und
 in allen Repository-READMEs).
+
+## Community
+
+Fragen, Hilfe im Alltag und Antworten in vier Sprachen (Bosnisch, Deutsch, Englisch, Albanisch):
+
+- **Facebook-Gruppe:** https://www.facebook.com/groups/1862788325147358/
+- **Kontakt:** openamer-max@proton.me
+- **Website:** https://openamer-max.github.io/
