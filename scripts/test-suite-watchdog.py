@@ -329,6 +329,10 @@ def _install_kill_handlers(state_path: Path, log_path: Path, target: str,
 def main() -> int:
     state_path = _env_override("STATE", STATE)
     log_path = _env_override("LOG", LOG)
+    # Snapshot the previous state BEFORE _announce_run overwrites it: recovery
+    # detection needs the old failure count, and _announce_run writes a fresh
+    # state file on every start.
+    prev = _load_state(state_path)
 
     if not RUNNER.exists() or not PYTHON.exists():
         print("TEST-WATCHDOG: runner or venv python missing")
@@ -368,7 +372,6 @@ def main() -> int:
     m = SUMMARY_RE.search(out)
     no_verdict = _no_verdict_files(out)
     counts = {path: int(failed) for path, _passed, failed in FAILED_FILE_LINE_RE.findall(out)}
-    prev = _load_state(state_path)
     n_files, n_passed, n_failed = (int(g) for g in m.groups()) if m else (None, None, None)
     status = ("timeout" if timed_out else "incomplete" if m is None or no_verdict
               or "NO TESTS RAN" in out else "green" if n_failed == 0
